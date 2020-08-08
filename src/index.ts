@@ -1,7 +1,16 @@
+#!/usr/bin/env node
+/**
+ * .git/hooks/post-commit
+#!/bin/sh
+
+# execute command with last commit log
+git log -1 | commit-proxy
+
+# Add other post-commit hooks
+ */
 import * as fs from 'fs';
 import * as path from 'path';
 import simpleGit from 'simple-git';
-// #!/usr/bin/env node
 
 const getString = (): Promise<string> => {
   return new Promise(resolve => {
