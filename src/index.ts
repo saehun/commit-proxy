@@ -71,17 +71,28 @@ const appendFile = (
   const file = path.join(proxyRepo, projectName);
 
   // if file doesn't exist, create
-  if (fs.existsSync(file)) {
+  if (!fs.existsSync(file)) {
     fs.writeFileSync(file, '');
   }
 
-  fs.appendFileSync(file, commit + '\n');
+  appendFileWithStream(file, commit);
 
   // return commit message
   return {
     commitMessage: commit.split('\n').slice(3).join('\n').trim(),
     file,
   };
+};
+
+/**
+ * Don't use fs.appendFile, instead use this
+ * https://stackoverflow.com/questions/3459476/how-to-append-to-a-file-in-node
+ */
+const appendFileWithStream = (filePath: string, data: string): void => {
+  const stream = fs.createWriteStream(filePath, {flags: 'a'});
+  stream.write(data);
+  stream.write('\n');
+  stream.end();
 };
 
 const push = (): void => {
