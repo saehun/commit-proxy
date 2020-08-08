@@ -42,5 +42,8 @@
     "git",
     "cli",
     "command-line"
-  ]
+  ],
+  "dependencies": {
+    "simple-git": "^2.17.0"
+  }
 }
