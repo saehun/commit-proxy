@@ -113,7 +113,7 @@ command:
 
 // main
 (async (): Promise<void> => {
-  const cmd = process.argv[2].trim();
+  const cmd = process.argv[2]?.trim();
   if (cmd === 'push') {
     push();
   } else if (cmd === 'register') {
