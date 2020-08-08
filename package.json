@@ -12,7 +12,6 @@
   },
   "scripts": {
     "build": "tsc",
-    "postbuild": "./postbuild.sh",
     "test": "NODE_ENV=test ts-node ./node_modules/.bin/jest",
     "lint": "eslint . --ext .js,.ts"
   },
