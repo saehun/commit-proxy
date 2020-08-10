@@ -15,13 +15,8 @@ const git = simpleGit({
   binary: 'git',
 });
 
-const postCommitScript = `#!/bin/sh
-
-# execute command with last commit log
-git log -1 | commit-proxy proxy
-
-# Add other post-commit hooks
-`;
+const shebang = '#!/bin/sh\n';
+const postCommitScript = 'git log -1 | commit-proxy proxy';
 
 const getString = (): Promise<string> => {
   return new Promise(resolve => {
@@ -102,13 +97,12 @@ const push = (): void => {
 const register = (): void => {
   const postCommitPath = path.join(gitRoot(), '.git', 'hooks', 'post-commit');
   if (fs.existsSync(postCommitPath)) {
-    console.error('./.git/hooks/post-commit is alreay exist');
-    process.exit(1);
+    appendFileWithStream(postCommitPath, postCommitScript);
   } else {
-    fs.writeFileSync(postCommitPath, postCommitScript);
+    fs.writeFileSync(shebang + postCommitPath, postCommitScript);
     execa('chmod', ['+x', postCommitPath]);
-    console.log(postCommitPath, 'registered');
   }
+    console.log(postCommitPath, 'registered');
 };
 
 const help = (): void => {
