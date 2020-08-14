@@ -99,7 +99,7 @@ const register = (): void => {
   if (fs.existsSync(postCommitPath)) {
     appendFileWithStream(postCommitPath, postCommitScript);
   } else {
-    fs.writeFileSync(shebang + postCommitPath, postCommitScript);
+    fs.writeFileSync(postCommitPath, shebang + postCommitScript);
     execa('chmod', ['+x', postCommitPath]);
   }
     console.log(postCommitPath, 'registered');
