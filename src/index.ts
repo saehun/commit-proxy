@@ -1,18 +1,26 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as execa from "execa";
-import simpleGit from 'simple-git';
+import * as execa from 'execa';
+import * as git from 'isomorphic-git';
+import { homedir } from 'os';
 
 // initialize global variable
 const proxyRepo = process.env.PROXY_REPO;
+const gituser = ((): { name: string; email: string } => {
+  const configFile = fs.readFileSync(path.join(homedir(), '.gitconfig'), 'utf-8');
+  const parseName = /name = (.+)\n/.exec(configFile);
+  const parseEmail = /email = (.+)\n/.exec(configFile);
+  if (!parseName || !parseEmail)
+    throw new Error("can't find git global config. check ~/.gitconfig'");
+
+  return {
+    name: parseName[1],
+    email: parseEmail[1],
+  };
+})();
 if (!proxyRepo) {
   throw new Error('proxy local repository is undefiend');
 }
-
-const git = simpleGit({
-  baseDir: proxyRepo,
-  binary: 'git',
-});
 
 const shebang = '#!/bin/sh\n';
 const postCommitScript = 'git log -1 | commit-proxy proxy';
@@ -48,20 +56,34 @@ const gitRoot = (cur = process.cwd()): string => {
 /**
  * Copy commit
  */
-const copyCommit = (projectName: string, commit: string): void => {
-  const { commitMessage, file } = appendFile(projectName, commit);
+const copyCommit = async (projectName: string, commit: string): Promise<void> => {
+  const { commitMessage } = appendFile(projectName, commit);
 
-  git.add(file);
-  git.commit(commitMessage);
+  await git.add({
+    filepath: projectName,
+    dir: proxyRepo,
+    fs,
+  });
+
+  await git.commit({
+    message: commitMessage,
+    dir: proxyRepo,
+    author: {
+      name: gituser.name,
+      email: gituser.email,
+    },
+    committer: {
+      name: gituser.name,
+      email: gituser.email,
+    },
+    fs,
+  });
 };
 
 /**
  *
  */
-const appendFile = (
-  projectName: string,
-  commit: string
-): { commitMessage: string; file: string } => {
+const appendFile = (projectName: string, commit: string): { commitMessage: string } => {
   const file = path.join(proxyRepo, projectName);
 
   // if file doesn't exist, create
@@ -74,7 +96,6 @@ const appendFile = (
   // return commit message
   return {
     commitMessage: commit.split('\n').slice(3).join('\n').trim(),
-    file,
   };
 };
 
@@ -83,14 +104,15 @@ const appendFile = (
  * https://stackoverflow.com/questions/3459476/how-to-append-to-a-file-in-node
  */
 const appendFileWithStream = (filePath: string, data: string): void => {
-  const stream = fs.createWriteStream(filePath, {flags: 'a'});
+  const stream = fs.createWriteStream(filePath, { flags: 'a' });
   stream.write(data);
   stream.write('\n');
   stream.end();
 };
 
-const push = (): void => {
-  git.push('origin', 'master');
+const push = async (): Promise<void> => {
+  process.chdir(proxyRepo);
+  await execa('git', ['push', 'origin', 'master']);
 };
 
 const register = (): void => {
@@ -101,7 +123,7 @@ const register = (): void => {
     fs.writeFileSync(postCommitPath, shebang + postCommitScript);
     execa('chmod', ['+x', postCommitPath]);
   }
-    console.log(postCommitPath, 'registered');
+  console.log(postCommitPath, 'registered');
 };
 
 const help = (): void => {
@@ -119,13 +141,13 @@ command:
 (async (): Promise<void> => {
   const cmd = process.argv[2]?.trim();
   if (cmd === 'push') {
-    push();
+    await push();
   } else if (cmd === 'register') {
     register();
   } else if (cmd === 'proxy') {
     const commit = await getString();
     const projectName = gitRoot().split('/').slice(-1)[0];
-    copyCommit(projectName, commit);
+    await copyCommit(projectName, commit);
   } else {
     help();
   }
