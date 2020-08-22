@@ -12,6 +12,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "postbuild": "scripts/postbuild.sh",
     "test": "NODE_ENV=test ts-node ./node_modules/.bin/jest",
     "lint": "eslint . --ext .js,.ts"
   },
@@ -45,6 +46,6 @@
   ],
   "dependencies": {
     "execa": "^4.0.3",
-    "simple-git": "^2.17.0"
+    "isomorphic-git": "^1.7.4"
   }
 }
