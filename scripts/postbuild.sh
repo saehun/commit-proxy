@@ -1,4 +1,4 @@
 #!/bin/bash
 
-sed -i '1i#!/usr/bin/env node' dist/index.js
+echo "$(echo '#!/usr/bin/env node' | cat - dist/index.js)" > dist/index.js
 chmod +x dist/index.js
